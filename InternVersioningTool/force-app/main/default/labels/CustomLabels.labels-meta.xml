@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Consumer_Key</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Consumer Key</shortDescription>
+        <value>3MVG9rKhT8ocoxGnSAQfUK.IwKKipL_.e6S4l7CaZDRwlGhdtOZc_GPxLfzrjBm4w9Uwngxo3Po0DttBLPzo8</value>
+    </labels>
+    <labels>
+        <fullName>Consumer_Secret</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Consumer Secret</shortDescription>
+        <value>51F33192AD8EFA06707E57A193341C95F738A45F6C384A9087AB1BC027A14419</value>
+    </labels>
+    <labels>
+        <fullName>EndpointUrl</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>EndpointUrl</shortDescription>
+        <value>https://agility-customer-1030-dev-ed.cs80.my.salesforce.com/</value>
+    </labels>
+    <labels>
+        <fullName>Password</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Password</shortDescription>
+        <value>g($3BojLI*</value>
+    </labels>
+    <labels>
+        <fullName>Security_Token</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Security Token</shortDescription>
+        <value>NOnuG9Zqgp0dtjGCdEUoAcBp9</value>
+    </labels>
+    <labels>
+        <fullName>Username</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Username</shortDescription>
+        <value>test-xqgry3kxn1xp@example.com</value>
+    </labels>
+</CustomLabels>
