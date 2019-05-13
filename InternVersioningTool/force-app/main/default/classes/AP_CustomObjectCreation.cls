@@ -17,6 +17,7 @@ public class AP_CustomObjectCreation {
         List<ApexClass> apexClassList = new List<ApexClass>();
         apexClassList = [SELECT Id, Name, body
                          FROM ApexClass
+                         WHERE Name ='AP_DummyClass'
                          LIMIT 3];
         return apexClassList;
     }
