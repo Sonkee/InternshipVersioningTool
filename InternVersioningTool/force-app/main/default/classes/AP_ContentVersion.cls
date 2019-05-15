@@ -9,9 +9,10 @@ public class AP_ContentVersion {
    /*
     * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
     * Description: Method to create ContentVersion records on another org
+    * Argument: Map<String,String> of CustomRecord and Id
     * Date: 25/4/2019
     */
-    public static void createFiles(){
+    public static void createFiles(Map<String,String> newRecordMap){
         String reqEndpoint = ENDPOINT_URL+'services/data/v45.0/composite/sobjects';
         string accToken;
         AP_CreateToken tokenClass = new AP_CreateToken();
@@ -27,7 +28,7 @@ public class AP_ContentVersion {
             String jsonStringUp = jsonBodyGenerator(apexClassList);
             String jsonStringDown = jsonBodyDataGenerator(apexClassList);
             String jsonString = jsonStringUp + '\n\n' + jsonStringDown;
-            system.debug('jsonString:'+jsonString);
+            //system.debug('jsonString:'+jsonString);
             req.setBody(jsonString);
             
             Http httpReq = new Http();
@@ -36,12 +37,15 @@ public class AP_ContentVersion {
             System.debug('createFiles_Response: ' + res.getBody());
             
             if(res!=null){
-                List<Id> fileIdList = new List<Id>();
+                List<String> fileIdList = new List<String>();
                 String newResponse = '{"responseList":'+jsonResponse+'}';
                 firstWrapper resWrapp = (firstWrapper)JSON.deserialize(newResponse,firstWrapper.class);
                 for(Integer i= 0;i<resWrapp.responseList.size();i++){
-                    fileIdList.add(resWrapp.responseList[i].Id);
+                    fileIdList.add('\''+resWrapp.responseList[i].Id+'\'');
                 }
+                System.debug('fileIdList: '+fileIdList);
+                //run method to query Id and ContentDocumentId
+                getContentVersion(fileIdList);
             }
         }
     }
@@ -136,7 +140,7 @@ public class AP_ContentVersion {
                 newResponseMap.put(recordList.Title,recordList.ContentDocumentId);
                 //System.debug('Title:'+recordList.Title +', ContentDocumentId:'+recordList.ContentDocumentId);
             }
-            System.debug('Map: '+newResponseMap);
+            System.debug('ResponseMap: '+newResponseMap);
         }
     }
     /*
@@ -179,5 +183,70 @@ public class AP_ContentVersion {
         String done;
         String totalSize;
         list<recordWrapper> records ;
+    }
+    
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Method to create ContentDocumentLink via http request
+    * Arguments: Map<String,String> recordName and Id, Map<String,String> fileTitle and Id
+    * Date: 07/05/2019
+    */
+    public static void createContentDocumentLink(Map<String,String> recordNameId, Map<String,String> fileTitleId){
+        string accToken;
+        
+        string endPoint=ENDPOINT_URL+'services/data/v45.0/composite/tree/ContentDocumentLink';
+        
+        AP_CreateToken tokenClass = new AP_CreateToken();
+        accToken = tokenClass.getRequestToken();
+        
+        if(accToken!=''){
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint(endPoint);
+            req.setMethod('POST');
+            req.setHeader('Authorization','Bearer '+accToken);
+            req.setHeader('Content-Type', 'application/json');
+            
+            req.setBody(generateAttachMethodJson(recordNameId,fileTitleId));
+            Http httpReq = new Http();
+            HttpResponse res = httpReq.send(req);
+            String jsonResponse = res.getBody();
+            System.debug('createContentDocumentLink: ' + jsonResponse);
+        }
+    }
+    
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Method to generate JsonString for http request to create ContentDocumentLink
+    * Arguments: Map<String,String> recordName and Id, Map<String,String> fileTitle and Id
+    * Date: 07/05/2019
+    */
+    public static String generateAttachMethodJson(Map<String,String> recordNameId, Map<String,String> fileTitleId){
+        Integer counter = 0;
+        String jsonString =
+            '{\n'+
+            '"records" : [\n';
+        for(String recordName : recordNameId.keySet()){
+            for(String fileTitle : fileTitleId.keySet()){
+                if(recordName==fileTitle){
+                    jsonString = jsonString +
+                        '{\n'+
+                        '"attributes": {"type":"ContentDocumentLink"},\n'+
+                        '"ContentDocumentId":"'+fileTitleId.get(fileTitle)+'",\n'+
+                        '"LinkedEntityId":"'+recordNameId.get(recordName)+'",\n'+
+                        '"ShareType":"V"\n'+
+                        '}';
+                    if(counter<recordNameId.size()-1){
+                        jsonString = jsonString +
+                            ',';
+                    }else{
+                        jsonString = jsonString +
+                            ']\n'+
+                            '}';
+                    }
+                }
+            }
+            counter++;
+        }
+        return jsonString;
     }
 }

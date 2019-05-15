@@ -15,7 +15,7 @@ public class AP_CreateRecord {
     public static void createCustomRecord(List<String> customObjNameList){
         string accToken;
         
-        string endPoint=ENDPOINT_URL+'services/data/v45.0/composite/sobjects';
+        string endPoint=ENDPOINT_URL+'services/data/v45.0/composite';
         
         AP_CreateToken tokenClass = new AP_CreateToken();
         accToken = tokenClass.getRequestToken();
@@ -34,19 +34,16 @@ public class AP_CreateRecord {
             HttpResponse res = httpReq.send(req);
             String jsonResponse = res.getBody();
             System.debug('createCustomRecord_Reponse: ' + jsonResponse);
-            //testing part to get response
-            //List<String> recordIdList = new List<String>();
+            
+            //A map to store Record Name and Id
+            Map<String,String> newRecordMap = new Map<String,String>();
             if(res!=null){
-                //String newResponse = '{"responseList" : '+ jsonResponse +'}';
                 compositeResponseWrapper compositeResWrapp = (compositeResponseWrapper)JSON.deserialize(jsonResponse,compositeResponseWrapper.class);
-                //String wrapJson = jsonResponse.substring(1, jsonResponse.length());
-                //List<String> recordResponseList = (List<String>)JSON.deserializeUntyped(jsonResponse);
-                //Map<String,responseWrapper> recordResponseList = (Map<String,responseWrapper>)JSON.deserializeUntyped(wrapJson);
-                /*for(Integer i= 0;i<resWrapp.responseList.size();i++){
-                    recordIdList.add(resWrapp.responseList[i].Id);
-                }*/
-                //AP_ContentVersion.createFiles();
-                //System.debug('recordIdList: '+recordIdList);
+                for(Integer i= 0;i<compositeResWrapp.compositeResponse.size();i++){
+                    newRecordMap.put(compositeResWrapp.compositeResponse[i].referenceId,compositeResWrapp.compositeResponse[i].body.id);
+                }
+                //AP_ContentVersion.createFiles(Map<String,String> newRecordMap);
+                System.debug('newRecordMap: '+newRecordMap);
             }
         }
     }
