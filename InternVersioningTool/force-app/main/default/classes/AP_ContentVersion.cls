@@ -44,8 +44,8 @@ public class AP_ContentVersion {
                     fileIdList.add('\''+resWrapp.responseList[i].Id+'\'');
                 }
                 System.debug('fileIdList: '+fileIdList);
-                //run method to query Id and ContentDocumentId
-                getContentVersion(fileIdList);
+                //run method to query Id and ContentDocumentId from newly created ContentVersion
+                getContentVersion(newRecordMap,fileIdList);
             }
         }
     }
@@ -110,12 +110,12 @@ public class AP_ContentVersion {
    /*
     * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
     * Description: Method to make an http query for ContentVersion from List of ContentVerison Id
-    * Argument: List<Id> fileIdList
+    * Argument: Map<String,String> newRecordMap, List<String> fileIdList
     * Date: 30/4/2019
     */
-    public static void getContentVersion(List<String> fileIdList){
+    public static void getContentVersion(Map<String,String> newRecordMap,List<String> fileIdList){
         String queryStr = 'select Id, Title, ContentDocumentID from ContentVersion where Id IN'+fileIdList;
-        //String queryStr = 'select+Id,Title,ContentDocumentID+from+ContentVersion+where+Id+IN+(\'06825000000F1V7AAK\',\'06825000000F1V6AAK\',\'06825000000F1V5AAK\')';
+
         String encoded = EncodingUtil.urlEncode(queryStr, 'UTF-8');
         
         system.debug('encoded: '+encoded);
@@ -133,12 +133,14 @@ public class AP_ContentVersion {
             Http httpReq = new Http();
             HttpResponse res = httpReq.send(req);
             String jsonResponse = res.getBody();
-            //System.debug('query_Response: ' + res.getBody());
+            //Map to save <Title, ContentDocumentId> from newly created ContentVersion records
             Map<String,String> newResponseMap = new Map<String,String>();
             queryReturnResponseWrapper QRRW = (queryReturnResponseWrapper)Json.deserialize(jsonResponse, queryReturnResponseWrapper.class);
             for(recordWrapper recordList : QRRW.records){
                 newResponseMap.put(recordList.Title,recordList.ContentDocumentId);
-                //System.debug('Title:'+recordList.Title +', ContentDocumentId:'+recordList.ContentDocumentId);
+            }
+            if(!newResponseMap.isEmpty()){
+                createContentDocumentLink(newRecordMap,newResponseMap);
             }
             System.debug('ResponseMap: '+newResponseMap);
         }
@@ -230,7 +232,7 @@ public class AP_ContentVersion {
                 if(recordName==fileTitle){
                     jsonString = jsonString +
                         '{\n'+
-                        '"attributes": {"type":"ContentDocumentLink"},\n'+
+                        '"attributes": {"type":"ContentDocumentLink", "referenceId" : "'+recordNameId.get(recordName)+'"},\n'+
                         '"ContentDocumentId":"'+fileTitleId.get(fileTitle)+'",\n'+
                         '"LinkedEntityId":"'+recordNameId.get(recordName)+'",\n'+
                         '"ShareType":"V"\n'+
