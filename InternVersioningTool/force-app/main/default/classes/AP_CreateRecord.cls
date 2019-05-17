@@ -42,7 +42,7 @@ public class AP_CreateRecord {
                 for(Integer i= 0;i<compositeResWrapp.compositeResponse.size();i++){
                     newRecordMap.put(compositeResWrapp.compositeResponse[i].referenceId,compositeResWrapp.compositeResponse[i].body.id);
                 }
-                //AP_ContentVersion.createFiles(Map<String,String> newRecordMap);
+                AP_ContentVersion.createFiles(newRecordMap);
                 System.debug('newRecordMap: '+newRecordMap);
             }
         }
