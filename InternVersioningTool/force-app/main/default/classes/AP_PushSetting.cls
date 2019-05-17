@@ -46,9 +46,25 @@ public class AP_PushSetting {
         String newVersion = String.valueOf(newIntVersion);
         
         String fileId = createNewVersionFile(className,newVersion,codeBody);
-        //create new version record and attach to file
+        //get contentDocumentId and create new version record
         System.debug('fileId and name:'+fileId+', '+className);
-        createRecord(className,fileId);
+        
+        String contentDocumentId;
+        String recordId;
+        String responseJs = createRecord(className,fileId);
+        CompositeWrapper responseWrap = (CompositeWrapper)Json.deserialize(responseJs, CompositeWrapper.class);
+        for(CompositeResponseWrapper bodyList : responseWrap.compositeResponse){
+            if(bodyList.referenceId=='NewFileInfo'){
+                contentDocumentId = bodyList.body.ContentDocumentId;
+            }
+            if(bodyList.referenceId=='NewRecord'){
+                recordId = bodyList.body.Id;
+            }
+        }
+        System.debug('contentDocumentId:'+contentDocumentId+', recordId: '+recordId);
+        if(contentDocumentId!=null && recordId!=null){
+            createNewLink(contentDocumentId,recordId);
+        }
     }
    /*
     * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
@@ -160,13 +176,14 @@ public class AP_PushSetting {
     
    /*
     * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
-    * Description: Method to create new record and attach to file
-    * Arguments: String className, Id fileId
+    * Description: Method to get contentDocumentId and create new record
+    * Arguments: String className, String fileId
     * Date: 14/05/2019
     */
-    public static void createRecord(String className, String fileId){
+    public static String createRecord(String className, String fileId){
         String reqEndpoint = ENDPOINT_URL+'services/data/v45.0/composite';
         string accToken;
+        String responseJson;
         AP_CreateToken tokenClass = new AP_CreateToken();
         accToken = tokenClass.getRequestToken();
         
@@ -177,14 +194,20 @@ public class AP_PushSetting {
             req.setHeader('Authorization','Bearer '+accToken);
             req.setMethod('POST');
             String jsonGen = createRecordJsonGen(className,fileId);
-            System.debug('jsonGen: '+jsonGen);
             req.setBody(jsonGen);
             
             Http httpReq = new Http();
             HttpResponse res = httpReq.send(req);
-            System.debug('createRecord, json response:'+res.getBody());
+            responseJson = res.getBody();
         }
+        return responseJson;
     }
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Method to create the JSON body for method createRecord
+    * Arguments: String className, String fileId
+    * Date: 14/05/2019
+    */
     public static String createRecordJsonGen(String className, String fileId){
         String jsonStr =
             '{"allOrNone" : true,\n'+
@@ -199,17 +222,90 @@ public class AP_PushSetting {
             '"body" : {\n'+
             '"Name" : "@{NewFileInfo.Title}"\n'+
             '}\n'+
-            '},{\n'+
-            '"method" : "POST",\n'+
-            '"url" : "/services/data/v45.0/sobjects/ContentDocumentLink",\n'+
-            '"referenceId" : "NewLink",\n'+
-            '"body" : {\n'+
-            '"ContentDocumentId" : "@{NewFileInfo.ContentDocumentId}",\n'+
-            '"LinkedEntityId" : "@{NewRecord.Id}",\n'+
-            '"ShareType" : "V"\n'+
-            '}\n'+
             '}]\n'+
             '}';
         return jsonStr;
+    }
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Wrapper class to get http response from method createRecord
+    * Date: 17/05/2019
+    */
+    public class bodyWrapper{
+        String Id;
+        String Name;
+        String ContentDocumentId;
+        String title;
+    }
+    public class CompositeResponseWrapper{
+        String referenceId;
+        Integer httpStatusCode;
+        AP_PushSetting.bodyWrapper body;
+        public CompositeResponseWrapper(){
+            body =  new AP_PushSetting.bodyWrapper();
+        }
+        
+    }
+    public class CompositeWrapper{
+        List<CompositeResponseWrapper> compositeResponse;
+    }
+    /*
+    public static void dummyMethod(){
+        String contentDocumentId;
+        String recordId;
+        String responseJs = createRecord('AP_DummyClass','06825000000GEVmAAO');
+        CompositeWrapper responseWrap = (CompositeWrapper)Json.deserialize(responseJs, CompositeWrapper.class);
+        for(CompositeResponseWrapper bodyList : responseWrap.compositeResponse){
+            if(bodyList.referenceId=='NewFileInfo'){
+                contentDocumentId = bodyList.body.ContentDocumentId;
+            }
+            if(bodyList.referenceId=='NewRecord'){
+                recordId = bodyList.body.Id;
+            }
+        }
+        if(!String.isEmpty(contentDocumentId) && !String.isEmpty(recordId)){
+            createNewLink(contentDocumentId,recordId);
+        }
+    }*/
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Wrapper class to get http response from method createRecord
+    * Date: 17/05/2019
+    */
+    public static void createNewLink(String contentDocumentId, String recordId){
+        String reqEndpoint = ENDPOINT_URL+'services/data/v45.0/sobjects/ContentDocumentLink';
+        string accToken;
+        String responseJson;
+        AP_CreateToken tokenClass = new AP_CreateToken();
+        accToken = tokenClass.getRequestToken();
+        
+        if(accToken!=''){
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint(reqEndpoint);
+            req.setHeader('Content-Type', 'application/json');
+            req.setHeader('Authorization','Bearer '+accToken);
+            req.setMethod('POST');
+            req.setBody(createLinkJSONBody(contentDocumentId,recordId));
+            
+            Http httpReq = new Http();
+            HttpResponse res = httpReq.send(req);
+            responseJson = res.getBody();
+            System.debug('createNewLink: '+responseJson);
+        }
+    }
+   /*
+    * Author: Shawn Son-kee shawn.lim.v.son-kee@accenture.com
+    * Description: Method to generate body for request in method createNewLink
+    * Date: 17/05/2019
+    */
+    public static String createLinkJSONBody(String contentDocumentId, String recordId){
+        String jsonBody = 
+            '{\n'+
+            '"ContentDocumentId" : "'+contentDocumentId+'",\n'+
+            '"LinkedEntityId" : "'+recordId+'",\n'+
+            '"ShareType" : "V"\n'+
+            '}';
+        System.debug('jsonBody(create link): '+jsonBody);
+        return jsonBody;
     }
 }
